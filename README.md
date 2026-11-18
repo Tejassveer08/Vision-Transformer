@@ -124,7 +124,47 @@ rec = ActionRecognizer("checkpoints/vivit_b16_ucf101/best.pth")
 rec.predict("clip.avi")   # [('Basketball', 0.93), ...]
 ```
 
-To run the app in Docker (the image includes `checkpoints/*/best.pth`):
+## Streamlit website
+
+`webapp/streamlit_app.py` is a public-facing front end. Visitors upload a clip (mp4, avi, mov, mkv or webm, up to 100 MB)
+and see the 8 frames the model samples plus a top-k chart. When the dataset is present locally, the page can also play
+held-out test clips with their ground truth. On CPU, one view takes about 1.5–6 s.
+
+Run it locally:
+
+```bash
+streamlit run webapp/streamlit_app.py          # http://localhost:8501
+```
+
+### Deploy to Streamlit Community Cloud (free)
+
+The trained checkpoint is too large for git (GitHub rejects files over 100 MB), so the app downloads it from a URL on
+first start and caches it.
+
+1. Export the slim checkpoint (fp16, no optimizer state, about 218 MB, test metrics included):
+   ```bash
+   python export_model.py --checkpoint checkpoints/vivit_b16_ucf101/best.pth --results results/vivit_b16_summary.json --out checkpoints/release/vivit_b16_ucf101_fp16.pth
+   ```
+2. Host the file at a public URL. The simplest option is a GitHub release: on the repo page click *Releases*, then
+   *Draft a new release*, use tag `v1.0`, and attach `vivit_b16_ucf101_fp16.pth`. The download URL is
+   `https://github.com/<user>/<repo>/releases/download/v1.0/vivit_b16_ucf101_fp16.pth`.
+   For a private repo, use a public Hugging Face model repo instead
+   (`https://huggingface.co/<user>/<repo>/resolve/main/vivit_b16_ucf101_fp16.pth`).
+3. Push the code to GitHub. On [share.streamlit.io](https://share.streamlit.io), click *Create app*, pick the repo and
+   branch `main`, and set the main file path to **`webapp/streamlit_app.py`**.
+4. Under *Advanced settings*, choose Python 3.12 and add this secret:
+   ```toml
+   MODEL_URL = "https://github.com/<user>/<repo>/releases/download/v1.0/vivit_b16_ucf101_fp16.pth"
+   ```
+5. Deploy. Community Cloud installs `webapp/requirements.txt`, which uses CPU-only torch (the default torch wheel pulls
+   about 3 GB of CUDA libraries). The first start takes a few minutes; after that the weights are cached.
+
+Self-hosting works the same way. Set `MODEL_URL` or `MODEL_PATH` as environment variables, set `DEVICE=cuda` on a GPU
+machine, and run `streamlit run webapp/streamlit_app.py --server.address 0.0.0.0`.
+
+### Docker (Gradio app)
+
+To run the Gradio app in Docker (the image includes `checkpoints/*/best.pth`):
 
 ```bash
 docker build -t ucf101-vit .
@@ -138,5 +178,7 @@ data/transforms.py     custom video transforms (PyTorch custom-transform recipe 
 data/ucf101.py         dataset, frame sampling (segment / dense), group-based splits, Kaggle download
 models/vit.py          ViT blocks from the notebook, ViViT, ImageNet weight loading
 models/video_models.py model zoo and per-model preprocessing configs
-train.py / evaluate.py / inference.py / app.py
+train.py / evaluate.py / inference.py / app.py (Gradio)
+export_model.py        slim fp16 checkpoint for deployment
+webapp/                Streamlit website and its CPU-only requirements
 ```

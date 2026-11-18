@@ -1,0 +1,7 @@
+# Dependencies for the Streamlit app only (CPU inference; this is what Streamlit Community Cloud installs).
+# The CPU wheel of torch avoids pulling ~3 GB of CUDA libraries.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.11.0+cpu
+numpy
+opencv-python-headless>=4.8
+streamlit>=1.40
