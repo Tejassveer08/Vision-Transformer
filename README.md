@@ -147,7 +147,9 @@ first start and caches it.
    ```
 2. Host the file at a public URL. The simplest option is a GitHub release: on the repo page click *Releases*, then
    *Draft a new release*, use tag `v1.0`, and attach `vivit_b16_ucf101_fp16.pth`. The download URL is
-   `https://github.com/<user>/<repo>/releases/download/v1.0/vivit_b16_ucf101_fp16.pth`.
+   `https://github.com/<user>/<repo>/releases/download/v1.0/vivit_b16_ucf101_fp16.pth`. The tag in the URL must match
+   the release tag exactly (`1.0` and `v1.0` are different tags). The asset's "copy link" on the release page gives the
+   exact URL.
    For a private repo, use a public Hugging Face model repo instead
    (`https://huggingface.co/<user>/<repo>/resolve/main/vivit_b16_ucf101_fp16.pth`).
 3. Push the code to GitHub. On [share.streamlit.io](https://share.streamlit.io), click *Create app*, pick the repo and

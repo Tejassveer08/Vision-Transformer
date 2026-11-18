@@ -56,11 +56,22 @@ def resolve_checkpoint() -> str:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         dest = CACHE_DIR / Path(url.split("?")[0]).name
         if not dest.exists():
+            import urllib.error
+
             import torch
 
             with st.spinner(f"Downloading model weights (first start only) from {url} ..."):
                 tmp = dest.with_suffix(".part")
-                torch.hub.download_url_to_file(url, str(tmp), progress=False)
+                try:
+                    torch.hub.download_url_to_file(url, str(tmp), progress=False)
+                except urllib.error.HTTPError as e:
+                    hint = (" The file isn't at that address. Check the release tag and file name in MODEL_URL, "
+                            "and that the release is published and the repo is public.") if e.code == 404 else ""
+                    st.error(f"Could not download the model weights (HTTP {e.code}) from `{url}`.{hint}")
+                    st.stop()
+                except (urllib.error.URLError, OSError) as e:
+                    st.error(f"Could not download the model weights from `{url}`: {e}")
+                    st.stop()
                 tmp.replace(dest)
         return str(dest)
     st.error("No model found. Set MODEL_URL (or MODEL_PATH) in the environment or in Streamlit secrets, "
