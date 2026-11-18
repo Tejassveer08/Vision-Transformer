@@ -1,0 +1,16 @@
+# Install PyTorch with CUDA first, e.g.:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+torch>=2.4
+torchvision>=0.19
+pytorchvideo==0.1.5      # X3D / SlowFast via torch.hub
+fvcore
+av
+opencv-python-headless>=4.8
+numpy
+scikit-learn
+matplotlib
+tqdm
+tensorboard
+gradio>=5
+kaggle
+six

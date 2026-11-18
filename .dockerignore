@@ -1,0 +1,7 @@
+.venv
+.git
+datasets
+logs
+results
+**/__pycache__
+checkpoints/**/last.pth
