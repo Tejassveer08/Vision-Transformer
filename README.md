@@ -127,8 +127,9 @@ rec.predict("clip.avi")   # [('Basketball', 0.93), ...]
 ## Streamlit website
 
 `webapp/streamlit_app.py` is a public-facing front end. Visitors upload a clip (mp4, avi, mov, mkv or webm, up to 100 MB)
-and see the 8 frames the model samples plus a top-k chart. When the dataset is present locally, the page can also play
-held-out test clips with their ground truth. On CPU, one view takes about 1.5–6 s.
+and see the 8 frames the model samples plus a top-k chart. Visitors can also pick from 12 held-out test clips bundled in
+`webapp/samples/` (2.8 MB, H.264 MP4, made with `python webapp/make_samples.py`), which show the ground truth next to
+the prediction. When the dataset is present locally, more test clips are listed. On CPU, one view takes about 1.5–6 s.
 
 Run it locally:
 

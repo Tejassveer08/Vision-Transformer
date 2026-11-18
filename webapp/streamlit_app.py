@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import glob
 import os
+import re
 import sys
 import tempfile
 import time
@@ -26,6 +27,7 @@ sys.path.insert(0, str(ROOT))  # so `data`, `models`, `inference` import when ru
 from data.ucf101 import load_clip  # noqa: E402
 from inference import ActionRecognizer  # noqa: E402
 
+SAMPLES_DIR = Path(__file__).resolve().parent / "samples"
 CACHE_DIR = Path(os.environ.get("MODEL_CACHE_DIR", Path.home() / ".cache" / "ucf101-vit"))
 VIDEO_TYPES = ["mp4", "avi", "mov", "mkv", "webm"]
 BROWSER_PLAYABLE = {"mp4", "webm", "mov"}
@@ -93,9 +95,15 @@ def frame_strip(video_path: str, rec: ActionRecognizer):
 
 
 def sample_clips():
-    """Held-out clips (groups g01-g07) when the dataset exists locally. Not available on the cloud."""
-    clips = sorted(glob.glob(str(ROOT / "datasets" / "ucf101" / "test" / "*" / "*_g0[1-7]_*.avi")))
-    return clips[::150][:25]
+    """Held-out test clips (groups g01-g07): the MP4s bundled in webapp/samples, plus more from the dataset if present."""
+    bundled = sorted(glob.glob(str(SAMPLES_DIR / "*.mp4")))
+    local = sorted(glob.glob(str(ROOT / "datasets" / "ucf101" / "test" / "*" / "*_g0[1-7]_*.avi")))[::150][:25]
+    return bundled + local
+
+
+def true_label(path: str) -> str:
+    m = re.match(r"v_(.+?)_g\d+_c\d+", Path(path).stem)
+    return m.group(1) if m else Path(path).parent.name
 
 
 # ----------------------------------------------------------------------------- UI
@@ -143,8 +151,11 @@ if source == "Upload a video":
             tmp.write_bytes(up.getbuffer())
         video_path, display_name = str(tmp), up.name
 else:
-    choice = st.selectbox("Held-out clip", samples, format_func=lambda p: f"{Path(p).parent.name} / {Path(p).name}")
-    video_path, display_name, ext = choice, Path(choice).name, "avi"
+    st.caption("Clips from UCF101 test groups the model never saw in training "
+               "(Soomro, Zamir & Shah, 2012).")
+    by_label = {f"{true_label(p)}  ·  {Path(p).name}": p for p in samples}
+    choice = by_label[st.selectbox("Held-out clip", list(by_label))]
+    video_path, display_name, ext = choice, Path(choice).name, Path(choice).suffix.lstrip(".").lower()
 
 if video_path is None:
     st.info("Upload a clip to get started. Works best on 2 to 10 second clips of a single action, "
@@ -178,5 +189,5 @@ with right:
     for name, prob in preds:
         st.progress(prob, text=f"{name}: {prob * 100:.1f}%")
     if source != "Upload a video":
-        truth = Path(video_path).parent.name
+        truth = true_label(video_path)
         (st.success if truth == best else st.warning)(f"Ground truth: **{truth}**")
